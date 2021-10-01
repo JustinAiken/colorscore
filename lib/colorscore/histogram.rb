@@ -2,8 +2,13 @@ require "shellwords"
 
 module Colorscore
   class Histogram
-    def initialize(image_path, colors=16, depth=8)
-      output = `convert #{image_path.shellescape} -resize 400x400 -format %c -dither None -quantize YIQ -colors #{colors.to_i} -depth #{depth.to_i} histogram:info:-`
+
+    class UnhistogrammableError < StandardError; end
+
+    def initialize(image_path, colors=16, depth=8, timeout: nil)
+      timeout_cmd = timeout ? "-limit time #{timeout} " : ""
+      output = `convert #{image_path.shellescape} #{timeout_cmd}-resize 400x400 -format %c -dither None -quantize YIQ -colors #{colors.to_i} -depth #{depth.to_i} histogram:info:-`
+      raise UnhistogrammableError if output == ""
       @lines = output.lines.sort.reverse.map(&:strip).reject(&:empty?)
     end
 
